@@ -63,4 +63,51 @@ for i in range(n_nodes):
 out = "evo_expansion_{0}.pscalar.nii".format(n_nodes)
 nib.save(nib.Cifti2Image(df['evo_expansion'].values.reshape(1,n_nodes),header=nib.load("corrthick_{0}.pscalar.nii".format(n_nodes)).header),out)
 
+
+# allo
+os.system('wget https://github.com/PennLINC/Brain_Organization/raw/master/AllometricScaling/rh.AllometricScaling_fsaverage5.func.gii')
+os.system('wget https://github.com/PennLINC/Brain_Organization/raw/master/AllometricScaling/lh.AllometricScaling_fsaverage5.func.gii')
+cmd = 'python freesurf2hcp.py lh.AllometricScaling_fsaverage5.func.gii rh.AllometricScaling_fsaverage5.func.gii alloscale'
+os.system(cmd)
+
+
+lfile = 'alloscale.32k_fs_LR.lh.shape.gii'
+rfile = 'alloscale.32k_fs_LR.rh.shape.gii'
+df['alloscale'] = np.zeros((400))
+evo = np.zeros((p.shape[1]))
+evo[:32492] = nib.load(lfile).agg_data().flatten()
+evo[32492:] = nib.load(rfile).agg_data().flatten()
+
+for i in range(n_nodes):
+    df['alloscale'][i] = evo[p[0]==i+1].mean()
+
+out = "alloscale_{0}.pscalar.nii".format(n_nodes)
+nib.save(nib.Cifti2Image(df['alloscale'].values.reshape(1,n_nodes),header=nib.load("corrthick_{0}.pscalar.nii".format(n_nodes)).header),out)
+
+# cbf
+os.system('wget https://github.com/PennLINC/Brain_Organization/raw/master/MeanCBF/lh.MeanCBF.fsaverage5.func.gii')
+os.system('wget https://github.com/PennLINC/Brain_Organization/raw/master/MeanCBF/rh.MeanCBF.fsaverage5.func.gii')
+
+lfile = 'lh.MeanCBF.fsaverage5.func.gii'
+rfile = 'rh.MeanCBF.fsaverage5.func.gii'
+
+cmd = 'python freesurf2hcp.py lh.MeanCBF.fsaverage5.func.gii rh.MeanCBF.fsaverage5.func.gii cbf'
+os.system(cmd)
+
+lfile = 'cbf.32k_fs_LR.lh.shape.gii'
+rfile = 'cbf.32k_fs_LR.rh.shape.gii'
+
+df['cbf'] = np.zeros((400))
+evo = np.zeros((p.shape[1]))
+evo[:32492] = nib.load(lfile).agg_data().flatten()
+evo[32492:] = nib.load(rfile).agg_data().flatten()
+
+for i in range(n_nodes):
+    df['cbf'][i] = evo[p[0]==i+1].mean()
+
+out = "cbf_{0}.pscalar.nii".format(n_nodes)
+nib.save(nib.Cifti2Image(df['cbf'].values.reshape(1,n_nodes),header=nib.load("corrthick_{0}.pscalar.nii".format(n_nodes)).header),out)
+
+
+
 df.to_csv('mappings_{0}.csv'.format(n_nodes))
