@@ -97,5 +97,8 @@ for i in range(n_nodes):
 out = "cbf_{0}.pscalar.nii".format(n_nodes)
 nib.save(nib.Cifti2Image(df['cbf'].values.reshape(1,n_nodes),header=nib.load("corrthick_{0}.pscalar.nii".format(n_nodes)).header),out)
 
+
+
+
 #save final dataframe
 df.to_csv('mappings_{0}.csv'.format(n_nodes))
