@@ -60,17 +60,22 @@ for i in range(n_nodes):
 out = "evo_expansion_{0}.pscalar.nii".format(n_nodes)
 nib.save(nib.Cifti2Image(df['evo_expansion'].values.reshape(1,n_nodes),header=nib.load("schaefer{0}headerfile.dscaler.nii".format(n_nodes)).header),out)
 
-# old evo
+# hill evo
 rfile = 'rh.Hill2010_evo_fsaverage5.func.gii'
 if os.path.exists(rfile) == False: os.system('wget https://github.com/PennLINC/Brain_Organization/raw/master/EvolutionaryExpansion/rh.Hill2010_evo_fsaverage5.func.gii')
-df['evo_expansion_old'] = np.zeros((400))
-evo = np.zeros((p.shape[1]))
-evo[:32492] = nib.load(lfile).get_fdata().flatten()
-evo[32492:] = nib.load(rfile).get_fdata().flatten()
+
+cmd = 'python freesurf2hcp.py rh.Hill2010_evo_fsaverage5.func.gii rh.Hill2010_evo_fsaverage5.func.gii evo_hill' #convert freesufer to fslr32k
+os.system(cmd)
+os.system('rm -r evo_hill.32k_fs_LR.lh.shape.gii')
+full_evo = np.zeros((1,64984))
+evo = nib.load('evo_hill.32k_fs_LR.rh.shape.gii').agg_data()
+full_evo[0][:32492] = evo
+full_evo[0][32492:] = evo
+df['evo_expansion_hill'] = np.zeros((n_nodes))
 for i in range(n_nodes):
-    df['evo_expansion'][i] = evo[p[0]==i+1].mean()
-out = "evo_expansion_{0}.pscalar.nii".format(n_nodes)
-nib.save(nib.Cifti2Image(df['evo_expansion'].values.reshape(1,n_nodes),header=nib.load("schaefer{0}headerfile.dscaler.nii".format(n_nodes)).header),out)
+    df['evo_expansion_hill'][i] = full_evo[0][np.where(p[0]==i+1)[0]].mean()
+out = "evo_expansion_hill_{0}.pscalar.nii".format(n_nodes)
+nib.save(nib.Cifti2Image(df['evo_expansion_hill'].values.reshape(1,n_nodes),header=nib.load("schaefer{0}headerfile.dscaler.nii".format(n_nodes)).header),out)
 
 
 # allo
