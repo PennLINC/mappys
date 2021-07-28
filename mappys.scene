@@ -3,9 +3,9 @@
     <SceneInfoDirectory>
         <BalsaStudyID></BalsaStudyID>
         <BalsaStudyTitle></BalsaStudyTitle>
-        <BalsaBaseDirectory>../../../../</BalsaBaseDirectory>
-        <BalsaExtractToDirectory>mappys_scence</BalsaExtractToDirectory>
-        <BasePathType>CUSTOM</BasePathType>
+        <BalsaBaseDirectory></BalsaBaseDirectory>
+        <BalsaExtractToDirectory>mappys_scene</BalsaExtractToDirectory>
+        <BasePathType>AUTOMATIC</BasePathType>
         <SceneInfo Index="0">
             <Name>original maps</Name>
             <BalsaSceneID></BalsaSceneID>
