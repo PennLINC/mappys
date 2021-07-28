@@ -27,7 +27,7 @@ cmd = 'wb_command -cifti-parcellate {0} {1} 2 {2}'.format(sa_file,parcel_file,ou
 os.system(cmd)
 df['SA_1'] = nib.load(out).get_fdata()[0]
 
-# mylein
+# T1/T2
 mfile = 'ave_MyelinMap_BC_MSMAll.32k_fs_LR.dscalar.nii'
 if os.path.exists(mfile) == False:
     os.system('wget https://github.com/PennLINC/Brain_Organization/raw/master/Myelin/ave_MyelinMap_BC_MSMAll.32k_fs_LR.dscalar.nii')
@@ -116,7 +116,8 @@ for i in range(n_nodes):
 out = "cbf_{0}.pscalar.nii".format(n_nodes)
 nib.save(nib.Cifti2Image(df['cbf'].values.reshape(1,n_nodes),header=nib.load("schaefer{0}headerfile.dscaler.nii".format(n_nodes)).header),out)
 
-#gene exp
+#Burt et al 2018 Nat Neuro Maps
+maps = ['brain_pc1.pscalar.nii','GABRA3.pscalar.nii','GRIN2B.pscalar.nii','PVALB.pscalar.nii','SST.pscalar.nii']
 glass_p = nib.load('Q1-Q6_RelatedValidation210.CorticalAreas_dil_Final_Final_Areas_Group_Colors.32k_fs_LR.dlabel.nii')
 d = glass_p.get_fdata()
 glass = np.zeros((64984))
@@ -128,21 +129,20 @@ for i in glass_p.header.get_axis(1).iter_structures():
         lhoff = thisheader.size
     if thisheader.name[0] == 'CIFTI_STRUCTURE_CORTEX_RIGHT':
         glass[thisheader.vertex] = d[0][lhoff:]
-brain = nib.load('brain_pc1.pscalar.nii').get_fdata()
-for node in range(180):
-    gene_exp[glass ==node+1] = brain[0][node]
-    gene_exp[np.where(glass==node+1)[0]+32492] = brain[0][node]
-gene_exp[gene_exp==0] = np.nan
-nib.save(nib.Cifti2Image(gene_exp.reshape(1,-1),header=nib.load('Schaefer2018_{0}Parcels_17Networks_order.dscalar.nii'.format(n_nodes)).header),'gene.dscalar.nii')
-schaefer = np.zeros(400)
-for node in range(400):
-    schaefer[node] = np.nanmean(gene_exp[np.where(p==node+1)[1]])
-df['ge'] = schaefer
-out = "ge_{0}.pscalar.nii".format(n_nodes)
-nib.save(nib.Cifti2Image(schaefer.reshape(1,n_nodes),header=nib.load("schaefer{0}headerfile.dscaler.nii".format(n_nodes)).header),out)
-# out = "ge_{0}.pscalar.nii".format(n_nodes)
-# cmd = 'wb_command -cifti-parcellate {0} {1} 2 {2}'.format('gene.dscalar.nii',parcel_file,out)
-# os.system(cmd)
 
-#save final dataframe
+for bmap in maps:
+    map_name = bmap.split('.')[0]
+    brain = nib.load(bmap).get_fdata()
+    for node in range(180):
+        gene_exp[glass ==node+1] = brain[0][node]
+        gene_exp[np.where(glass==node+1)[0]+32492] = brain[0][node]
+    gene_exp[gene_exp==0] = np.nan
+    nib.save(nib.Cifti2Image(gene_exp.reshape(1,-1),header=nib.load('Schaefer2018_{0}Parcels_17Networks_order.dscalar.nii'.format(n_nodes)).header),'gene.dscalar.nii')
+    schaefer = np.zeros(400)
+    for node in range(400):
+        schaefer[node] = np.nanmean(gene_exp[np.where(p==node+1)[1]])
+    df[map_name] = schaefer
+    out = "{0}_{1}.pscalar.nii".format(map_name,n_nodes)
+    nib.save(nib.Cifti2Image(schaefer.reshape(1,n_nodes),header=nib.load("schaefer{0}headerfile.dscaler.nii".format(n_nodes)).header),out)
+
 df.to_csv('mappings_{0}.csv'.format(n_nodes))
