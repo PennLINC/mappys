@@ -1,0 +1,121 @@
+---
+title: "NeuroSynth Topic Terms PCA"
+author: "Valerie Jill Sydnor"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(ciftiTools)
+library(gifti)
+library(rgl)
+ciftiTools.setOption('wb_path', '/Users/valeriesydnor/Software/workbench/')
+rgl::setupKnitr()
+library(dplyr)
+```
+
+```{r}
+#surface files for visualization
+surfL_fname <- read_surf("/Users/valeriesydnor/Software/workbench/workbench_files/Q1-Q6_R440.L.midthickness.32k_fs_LR.surf.gii")
+surfR_fname <- read_surf("/Users/valeriesydnor/Software/workbench/workbench_files/Q1-Q6_R440.R.midthickness.32k_fs_LR.surf.gii")
+```
+
+Left Hemisphere PCA
+```{r}
+setwd("/Users/valeriesydnor/Software/NeuroSynth/neurosynth_topics_100terms_LH/")
+medialwall.mask.leftcortex <- read.csv("../medialwall.mask.leftcortex.csv", header = F, colClasses = c("logical")) #read in left cortex medial wall mask
+
+files <- list.files(getwd(), pattern='association', ignore.case=T, full.names = F) #list all association_*gii files
+
+neurosynth.matrix <- matrix(NA, nrow=100, ncol=32492) 
+
+for(i in 1:100){
+  gii <- readgii(files[i]) #read in gifti 
+  neurosynth.matrix[i,] <- t(gii$data$normal) #save topic term values to the neurosynth.matrix
+}
+neurosynth.matrix <- as.data.frame(neurosynth.matrix) #convert to dataframe to maintain original col names in cleaned version
+neurosynth.matrix.cleaned <- neurosynth.matrix[, colSums(abs(neurosynth.matrix)) != 0] #remove vertices assigned a 0 in every topic term
+```
+
+```{r}
+neurosynth.pca <- prcomp(neurosynth.matrix.cleaned, scale. = TRUE, center = TRUE) #perform the PCA
+```
+
+```{r}
+print(summary(neurosynth.pca)$importance[2,1:10]*100) #calculate variance explained
+```
+
+```{r}
+neurosynth.pca.loadings.LH <- neurosynth.pca$rotation[,1] #extract 28006 vertex loadings, PC1
+neurosynth.pca.loadings.LH <- as.data.frame(neurosynth.pca.loadings.LH)
+loadings.left.cortex <- matrix(0, ncol=1, nrow=32492) #create an empty  matrix
+  for(row in c(1:nrow(neurosynth.pca.loadings.LH))){ #save each vertex's PC1 loading to loadings.left.cortex
+  vertexname <- row.names(neurosynth.pca.loadings.LH)[row]
+  vertexnumber <- as.numeric(sub('.', '', vertexname))
+  loadings.left.cortex[vertexnumber,] <- unlist(neurosynth.pca.loadings.LH[row,])
+  }
+```
+
+```{r}
+mycolors <- c("#ffc229", "#ffd476", "#ffe3a8", "#fff3d8", "#fffffe", "#e4d1e6", "#bc90c2", "#9656a2", "#711784")
+xii.loadings.LH <- as_xifti(cortexL = loadings.left.cortex, cortexL_mwall = medialwall.mask.leftcortex$V1) #convert PC1 loadings into a cifti file
+xii.loadings.LH <- add_surf(xii.loadings.LH, surfL=surfL_fname, surfR=surfR_fname)
+view_xifti_surface(xii.loadings.LH, colors=mycolors, hemisphere = c("left"), zlim = c(-0.0055, 0.005), widget = TRUE) #visualize
+```
+
+```{r}
+write_cifti(xii.loadings.LH, cifti_fname = "/Users/valeriesydnor/Software/NeuroSynth/NeuroSynth_PC1_LH.dscalar.nii")
+```
+
+
+Right Hemisphere PCA
+```{r}
+setwd("/Users/valeriesydnor/Software/NeuroSynth/neurosynth_topics_100terms_RH/")
+medialwall.mask.rightcortex <- read.csv("../medialwall.mask.rightcortex.csv", header = F, colClasses = c("logical")) #read in right cortex medial wall mask
+
+files <- list.files(getwd(), pattern='association', ignore.case=T, full.names = F) #list all association_*gii files
+
+neurosynth.matrix <- matrix(NA, nrow=100, ncol=32492) 
+
+for(i in 1:100){
+  gii <- readgii(files[i]) #read in gifti 
+  neurosynth.matrix[i,] <- t(gii$data$normal) #save topic term values to the neurosynth.matrix
+}
+neurosynth.matrix <- as.data.frame(neurosynth.matrix) #convert to dataframe to maintain original col names in cleaned version
+neurosynth.matrix.cleaned <- neurosynth.matrix[, colSums(abs(neurosynth.matrix)) != 0] #remove vertices assigned a 0 in every topic term
+```
+
+```{r}
+neurosynth.pca <- prcomp(neurosynth.matrix.cleaned, scale. = TRUE, center = TRUE) #perform the PCA
+```
+
+```{r}
+print(summary(neurosynth.pca)$importance[2,1:10]*100) #calculate variance explained
+```
+
+```{r}
+neurosynth.pca.loadings.RH <- neurosynth.pca$rotation[,1] #extract 26497 vertex loadings, PC1
+neurosynth.pca.loadings.RH <- as.data.frame(neurosynth.pca.loadings.RH)
+loadings.right.cortex <- matrix(0, ncol=1, nrow=32492) #create an empty  matrix
+  for(row in c(1:nrow(neurosynth.pca.loadings.RH))){ #save each vertex's PC1 loading to loadings.right.cortex
+  vertexname <- row.names(neurosynth.pca.loadings.RH)[row]
+  vertexnumber <- as.numeric(sub('.', '', vertexname))
+  loadings.right.cortex[vertexnumber,] <- unlist(neurosynth.pca.loadings.RH[row,])
+  }
+```
+
+```{r}
+mycolors <- c("#ffc229", "#ffd476", "#ffe3a8", "#fff3d8", "#fffffe", "#e4d1e6", "#bc90c2", "#9656a2", "#711784")
+xii.loadings.RH <- as_xifti(cortexR = loadings.right.cortex, cortexR_mwall = medialwall.mask.rightcortex$V1) #convert PC1 loadings into a cifti file
+xii.loadings.RH <- add_surf(xii.loadings.RH, surfL=surfL_fname, surfR=surfR_fname)
+view_xifti_surface(xii.loadings.RH, colors=mycolors, hemisphere = c("right"), zlim = c(-0.0055, 0.004), widget = TRUE) #visualize
+```
+
+```{r}
+write_cifti(xii.loadings.RH, cifti_fname = "/Users/valeriesydnor/Software/NeuroSynth/NeuroSynth_PC1_RH.dscalar.nii")
+```
+
+Combine Left and Right Hemisphere PC1s
+```{r}
+NeuroSynth.PC1 <- as_xifti(cortexL = loadings.left.cortex, cortexL_mwall = medialwall.mask.leftcortex$V1, cortexR = loadings.right.cortex, cortexR_mwall = medialwall.mask.rightcortex$V1)
+write_cifti(NeuroSynth.PC1, cifti_fname = "/Users/valeriesydnor/Software/NeuroSynth/NeuroSynth_PC1.dscalar.nii")
+```
